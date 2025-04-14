@@ -5,154 +5,100 @@ import { MessageSquare, X } from "lucide-react"
 
 export default function BotpressEmbedded() {
   const [isOpen, setIsOpen] = useState(false)
-  const initAttempts = useRef(0)
   const botpressInitialized = useRef(false)
-  const chatContainerRef = useRef<HTMLDivElement>(null)
 
-  // Function to initialize Botpress
-  const initializeBotpress = () => {
-    if (!window.botpress || botpressInitialized.current) return
-
-    try {
-      // Initialize Botpress
-      window.botpress.init({
-        botId: "e0d700ee-44b3-4f63-bbd6-a19c23ceac32",
-        configuration: {
-          composerPlaceholder: "how can i help you today?",
-          botName: "Kevin Marshall",
-          botAvatar: "https://files.bpcontent.cloud/2025/04/05/14/20250405142755-IHDH81BW.jpeg",
-          website: {},
-          email: {
-            title: "kevinmarshall@antiquedealer.co.uk",
-            link: "kevinmarshall@antiquedealer.co.uk",
-          },
-          phone: {
-            title: "07803 759820",
-            link: "07803 759820",
-          },
-          termsOfService: {},
-          privacyPolicy: {},
-          color: "#00563F",
-          variant: "solid",
-          themeMode: "light",
-          fontFamily: "inter",
-          radius: 1,
-        },
-        clientId: "6dc4fa0f-913d-4f14-bce7-753ec60ed172",
-        selector: "#webchat",
-      })
-
-      // Mark as initialized
-      botpressInitialized.current = true
-
-      // Set up event listeners
-      window.botpress.on("webchat:ready", () => {
-        console.log("Botpress webchat is ready")
-        if (isOpen) {
-          setTimeout(() => window.botpress.open(), 100)
-        }
-      })
-
-      console.log("Botpress initialized successfully")
-    } catch (error) {
-      console.error("Error initializing Botpress:", error)
-    }
-  }
-
-  // Load the Botpress script
+  // Load the Botpress script and initialize
   useEffect(() => {
-    // Only load the script once
+    // Only run once
     if (document.getElementById("botpress-script")) return
 
+    // Create and add the script
     const script = document.createElement("script")
     script.id = "botpress-script"
     script.src = "https://cdn.botpress.cloud/webchat/v2.3/inject.js"
     script.async = true
-    script.defer = true
-
     script.onload = () => {
-      console.log("Botpress script loaded")
-      // Try to initialize immediately
-      initializeBotpress()
+      // Wait a moment for the script to initialize
+      setTimeout(() => {
+        if (window.botpress) {
+          // Set up event listener first
+          window.botpress.on("webchat:ready", () => {
+            console.log("Botpress webchat is ready")
+            botpressInitialized.current = true
 
-      // Also set up a retry mechanism
-      const initInterval = setInterval(() => {
-        if (botpressInitialized.current) {
-          clearInterval(initInterval)
-          return
+            // If user already clicked to open before initialization completed
+            if (isOpen) {
+              window.botpress.open()
+            }
+          })
+
+          // Listen for close events from Botpress
+          window.botpress.on("webchat:close", () => {
+            console.log("Botpress webchat closed")
+            setIsOpen(false)
+          })
+
+          // Initialize Botpress with the exact configuration provided
+          window.botpress.init({
+            botId: "e0d700ee-44b3-4f63-bbd6-a19c23ceac32",
+            configuration: {
+              composerPlaceholder: "how can i help you today?",
+              botName: "Kevin Marshall",
+              botAvatar: "https://files.bpcontent.cloud/2025/04/05/14/20250405142755-IHDH81BW.jpeg",
+              website: {},
+              email: {
+                title: "kevinmarshall@antiquedealer.co.uk",
+                link: "kevinmarshall@antiquedealer.co.uk",
+              },
+              phone: {
+                title: "07803 759820",
+                link: "07803 759820",
+              },
+              termsOfService: {},
+              privacyPolicy: {},
+              color: "#00563F",
+              variant: "solid",
+              themeMode: "light",
+              fontFamily: "inter",
+              radius: 1,
+            },
+            clientId: "6dc4fa0f-913d-4f14-bce7-753ec60ed172",
+            hideWidget: true, // Hide the default widget
+          })
         }
-
-        if (initAttempts.current >= 10) {
-          clearInterval(initInterval)
-          console.error("Failed to initialize Botpress after multiple attempts")
-          return
-        }
-
-        console.log(`Attempt ${initAttempts.current + 1} to initialize Botpress`)
-        initAttempts.current += 1
-        initializeBotpress()
-      }, 1000)
-
-      return () => clearInterval(initInterval)
+      }, 500)
     }
+    document.head.appendChild(script)
 
-    script.onerror = () => {
-      console.error("Failed to load Botpress script")
-    }
-
-    document.body.appendChild(script)
-
-    // Cleanup
     return () => {
+      // Clean up if component unmounts
       if (document.getElementById("botpress-script")) {
         document.getElementById("botpress-script")?.remove()
       }
-    }
-  }, [])
-
-  // Handle open/close state changes
-  useEffect(() => {
-    if (!window.botpress || !botpressInitialized.current) return
-
-    if (isOpen) {
-      window.botpress.open()
-    } else {
-      window.botpress.close()
     }
   }, [isOpen])
 
   // Toggle chat open/closed
   const toggleChat = () => {
-    setIsOpen((prev) => !prev)
+    const newIsOpen = !isOpen
+    setIsOpen(newIsOpen)
+
+    // Only try to control Botpress if it's initialized
+    if (botpressInitialized.current && window.botpress) {
+      if (newIsOpen) {
+        window.botpress.open()
+      } else {
+        window.botpress.close()
+      }
+    }
   }
 
   return (
     <>
-      {/* Chat container */}
-      <div
-        ref={chatContainerRef}
-        style={{
-          position: "fixed",
-          bottom: "20px",
-          right: "20px",
-          width: "400px",
-          height: "600px",
-          maxWidth: "90vw",
-          maxHeight: "80vh",
-          zIndex: 9999,
-          borderRadius: "10px",
-          overflow: "hidden",
-          boxShadow: "0 5px 15px rgba(0, 0, 0, 0.2)",
-          display: isOpen ? "block" : "none",
-          backgroundColor: "white", // Add background to prevent transparency issues
-        }}
-      >
-        <div id="webchat" style={{ width: "100%", height: "100%" }}></div>
-      </div>
-
       {/* Chat button */}
       <button
         onClick={toggleChat}
+        className="chat-toggle-button"
         style={{
           position: "fixed",
           bottom: "20px",
@@ -169,33 +115,46 @@ export default function BotpressEmbedded() {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          transition: "transform 0.2s ease, background-color 0.2s ease",
-          transform: isOpen ? "scale(0.9)" : "scale(1)",
+          padding: 0,
+          overflow: "hidden",
         }}
         aria-label={isOpen ? "Close chat" : "Open chat"}
       >
-        {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%", height: "100%" }}>
+          {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
+        </div>
       </button>
 
       {/* Custom styles */}
       <style jsx global>{`
-        #webchat .bpWebchat {
-          position: unset !important;
-          width: 100% !important;
-          height: 100% !important;
-          max-height: 100% !important;
-          max-width: 100% !important;
+        /* Position the Botpress widget properly when open */
+        .bp-widget-web {
+          position: fixed !important;
+          bottom: 20px !important;
+          right: 20px !important;
+          width: 400px !important;
+          height: 600px !important;
+          max-width: 90vw !important;
+          max-height: 80vh !important;
+          border-radius: 10px !important;
+          overflow: hidden !important;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+          z-index: 9999 !important;
         }
-
-        #webchat .bpFab {
+        
+        /* Hide the default Botpress button */
+        .bp-widget-web .bpw-floating-button {
           display: none !important;
         }
         
-        /* Ensure the chat container doesn't get hidden */
-        #webchat {
-          display: block !important;
-          visibility: visible !important;
-          opacity: 1 !important;
+        /* Make sure our button doesn't have any unexpected content */
+        .chat-toggle-button * {
+          pointer-events: none;
+        }
+        
+        /* Hide any Botpress elements that might be causing overlap */
+        body > div.bp-widget-widget {
+          display: none !important;
         }
       `}</style>
     </>
