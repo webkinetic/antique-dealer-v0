@@ -264,8 +264,7 @@ export default async function Home() {
               <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">About Kevin Marshall</h2>
               <p className="text-gray-700 mb-3 md:mb-4 text-sm md:text-base">
                 With over 40 years of experience in the antiques trade, Kevin Marshall has established himself as one of
-                Hull's most respected antique Kevin Marshall has established himself as one of Hull's most respected
-                antique dealers.
+                Hull's most respected antique dealers.
               </p>
               <p className="text-gray-700 mb-4 md:mb-6 text-sm md:text-base">
                 Each piece in our collection is personally sourced and selected by Kevin, ensuring authenticity,
